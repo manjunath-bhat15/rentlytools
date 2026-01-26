@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>RentlyTools WebSocket + Redis Test</title>
+
+  <!-- ✅ Correct external libs -->
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background: #f6f8fa;
+    }
+    h2 { color: #333; }
+    #logs {
+      border: 1px solid #ccc;
+      background: #fff;
+      padding: 10px;
+      height: 250px;
+      overflow-y: scroll;
+    }
+    button {
+      padding: 6px 12px;
+      margin: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔔 WebSocket + Redis Broadcast Test</h2>
+  
+  <button onclick="connect()">Connect to WS</button>
+  <button onclick="sendTest()">Send Test Message</button>
+
+  <h3>Logs:</h3>
+  <pre id="logs"></pre>
+
+  <script>
+    let stompClient;
+
+    function log(msg) {
+      document.getElementById("logs").textContent += msg + "\n";
+    }
+
+    function connect() {
+      const socket = new SockJS("http://localhost:8080/ws");
+      stompClient = Stomp.over(socket);
+      stompClient.debug = null; // disable verbose logs
+
+      stompClient.connect({}, () => {
+        log("✅ Connected to WebSocket");
+        stompClient.subscribe("/topic/chat", (message) => {
+          log("📩 Received: " + message.body);
+        });
+      }, (error) => {
+        log("❌ Connection error: " + error);
+      });
+    }
+
+    function sendTest() {
+      fetch("http://localhost:8080/api/chat/broadcast?msg=Hello+from+browser", {
+        method: "POST"
+      })
+      .then(() => log("🌐 Sent test message via REST"))
+      .catch((err) => log("❌ Error sending: " + err));
+    }
+  </script>
+</body>
+</html>

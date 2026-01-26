@@ -1,0 +1,10 @@
+flask
+easyocr
+numpy
+opencv-python-headless
+pillow
+torch --index-url https://download.pytorch.org/whl/cpu
+torchvision --index-url https://download.pytorch.org/whl/cpu
+tensorflow-cpu==2.16.1
+tf-keras==2.16.0
+deepface

@@ -1,0 +1,67 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rentlytools-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: rentlytools
+      MYSQL_USER: rently_user
+      MYSQL_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rentlytools
+
+  redis:
+    image: redis:7-alpine
+    container_name: rentlytools-redis
+    networks:
+      - rentlytools
+
+  # ADD THIS SECTION: The OCR Service
+  ocr:
+    build: ./rentlytools-ocr-service  # Path to your Python/OCR folder
+    container_name: rentlytools-ocr
+    expose:
+      - "5000"                # Internal port for Flask/FastAPI
+    networks:
+      - rentlytools
+
+  backend:
+    build: ./rentlytools-backend
+    container_name: rentlytools-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      ocr:                     # Backend now waits for OCR
+        condition: service_started
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    networks:
+      - rentlytools
+
+  frontend:
+    build: ./rentlytools-frontend
+    container_name: rentlytools-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - rentlytools
+
+volumes:
+  mysql_data:
+
+networks:
+  rentlytools:
+    driver: bridge
